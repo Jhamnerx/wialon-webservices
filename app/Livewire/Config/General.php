@@ -96,8 +96,9 @@ class General extends Component
         ]);
 
         try {
+            $config = Config::first();
 
-            $this->config->update([
+            $config->update([
                 'user' => $this->user,
                 'token' => $this->token,
                 'status' => $this->status,
