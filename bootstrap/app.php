@@ -33,7 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })->withSchedule(function (Schedule $schedule) {
 
-        $schedule->command('wox:get')->everyThirtySeconds()->runInBackground();
+        $schedule->command('wialon:get')->everyThirtySeconds()->runInBackground();
         $schedule->job(new ClearLogs(30))->daily();
     })
     ->withExceptions(function (Exceptions $exceptions) {})->create();
