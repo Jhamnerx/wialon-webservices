@@ -18,8 +18,8 @@ NC='\033[0m' # No Color
 # Variables de configuración
 APP_USER="root"
 DB_NAME="wialon_webservices"
-DB_USER="wialon_user"
-DB_PASSWORD=""  # Se generará automáticamente
+DB_USER="root"
+DB_PASSWORD=""  # Contraseña de root de MariaDB
 DOMAIN="your-domain.com"  # Cambiar según necesidad
 GIT_REPO="https://github.com/Jhamnerx/wialon-webservices"  # URL del repositorio de GitHub
 
@@ -66,12 +66,15 @@ print_message "Dominio configurado: ${DOMAIN}"
 echo ""
 
 ################################################################################
-# 1. ACTUALIZAR SISTEMA
+# 1. ACTUALIZAR SISTEMA E INSTALAR HERRAMIENTAS BÁSICAS
 ################################################################################
 print_step "Actualizando sistema operativo..."
 dnf update -y
 dnf install -y epel-release
 dnf config-manager --set-enabled crb
+
+print_step "Instalando herramientas básicas..."
+dnf install -y nano wget curl
 
 ################################################################################
 # 2. INSTALAR PHP 8.3
@@ -116,23 +119,19 @@ dnf install -y mariadb-server mariadb
 systemctl start mariadb
 systemctl enable mariadb
 
-# Generar contraseña aleatoria para la base de datos
-DB_PASSWORD=$(openssl rand -base64 32)
-
-# Configurar MariaDB
-print_message "Configurando MariaDB..."
+# Crear base de datos
+print_message "Creando base de datos..."
 mysql -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-mysql -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';"
-mysql -e "FLUSH PRIVILEGES;"
 
-# Guardar credenciales
-echo "DB_NAME=${DB_NAME}" > /root/.wialon_db_credentials
-echo "DB_USER=${DB_USER}" >> /root/.wialon_db_credentials
-echo "DB_PASSWORD=${DB_PASSWORD}" >> /root/.wialon_db_credentials
-chmod 600 /root/.wialon_db_credentials
+# Asegurar instalación de MariaDB
+print_step "Configurando seguridad de MariaDB..."
+print_warning "A continuación se ejecutará mysql_secure_installation"
+print_warning "Por favor, configure una contraseña segura para root y guárdela para usarla en el archivo .env"
+echo ""
+mysql_secure_installation
 
-print_message "Credenciales de base de datos guardadas en /root/.wialon_db_credentials"
+print_message "Seguridad de MariaDB configurada"
+print_warning "Recuerde guardar la contraseña de root de MariaDB para configurar el archivo .env"
 
 ################################################################################
 # 4. INSTALAR REDIS
@@ -162,11 +161,11 @@ dnf install -y httpd mod_ssl
 systemctl enable httpd
 
 ################################################################################
-# 6. INSTALAR NODE.JS 20 LTS
+# 6. INSTALAR NODE.JS 22 LTS
 ################################################################################
-print_step "Instalando Node.js 20 LTS..."
+print_step "Instalando Node.js 22 LTS..."
 dnf module reset nodejs -y
-dnf module enable nodejs:20 -y
+dnf module enable nodejs:22 -y
 dnf install -y nodejs npm
 
 # Verificar instalación
@@ -227,14 +226,35 @@ mkdir -p ${APP_DIR}/storage/framework/{sessions,views,cache}
 mkdir -p ${APP_DIR}/bootstrap/cache
 
 ################################################################################
-# 11. CONFIGURAR PERMISOS
+# 11. CONFIGURAR ARCHIVO .ENV
 ################################################################################
-print_step "Configurando permisos..."
-chown -R root:apache ${APP_DIR}
-chmod -R 755 ${APP_DIR}
-chmod -R 775 ${APP_DIR}/storage
-chmod -R 775 ${APP_DIR}/bootstrap/cache
-chgrp -R apache ${APP_DIR}/storage ${APP_DIR}/bootstrap/cache
+print_step "Configurando archivo .env..."
+cd ${APP_DIR}
+if [ ! -f "${APP_DIR}/.env" ]; then
+    cp ${APP_DIR}/.env.example ${APP_DIR}/.env
+    
+    # Solicitar contraseña de root de MariaDB
+    echo ""
+    read -sp "Ingrese la contraseña de root de MariaDB configurada anteriormente: " DB_PASSWORD
+    echo ""
+    
+    # Actualizar valores en .env
+    sed -i "s|APP_URL=.*|APP_URL=http://${DOMAIN}|g" ${APP_DIR}/.env
+    sed -i "s|DB_DATABASE=.*|DB_DATABASE=${DB_NAME}|g" ${APP_DIR}/.env
+    sed -i "s|DB_USERNAME=.*|DB_USERNAME=${DB_USER}|g" ${APP_DIR}/.env
+    sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|g" ${APP_DIR}/.env
+    
+    # Guardar credenciales
+    echo "DB_NAME=${DB_NAME}" > /root/.wialon_db_credentials
+    echo "DB_USER=${DB_USER}" >> /root/.wialon_db_credentials
+    echo "DB_PASSWORD=${DB_PASSWORD}" >> /root/.wialon_db_credentials
+    chmod 600 /root/.wialon_db_credentials
+    
+    print_message "Archivo .env configurado"
+    print_message "Credenciales guardadas en /root/.wialon_db_credentials"
+else
+    print_warning "El archivo .env ya existe, no se modificará"
+fi
 
 ################################################################################
 # 12. INSTALAR DEPENDENCIAS DE LA APLICACIÓN
@@ -250,7 +270,17 @@ print_step "Compilando assets..."
 npm run build
 
 ################################################################################
-# 13. CONFIGURAR PHP-FPM
+# 13. CONFIGURAR PERMISOS
+################################################################################
+print_step "Configurando permisos..."
+chown -R root:apache ${APP_DIR}
+chmod -R 755 ${APP_DIR}
+chmod -R 775 ${APP_DIR}/storage
+chmod -R 775 ${APP_DIR}/bootstrap/cache
+chgrp -R apache ${APP_DIR}/storage ${APP_DIR}/bootstrap/cache
+
+################################################################################
+# 14. CONFIGURAR PHP-FPM
 ################################################################################
 print_step "Configurando PHP-FPM..."
 cat > /etc/php-fpm.d/${APP_NAME}.conf <<EOF
@@ -279,7 +309,7 @@ systemctl enable php-fpm
 systemctl restart php-fpm
 
 ################################################################################
-# 14. CONFIGURAR APACHE VIRTUALHOST
+# 15. CONFIGURAR APACHE VIRTUALHOST
 ################################################################################
 print_step "Configurando VirtualHost de Apache..."
 cat > /etc/httpd/conf.d/${APP_NAME}.conf <<EOF
@@ -316,27 +346,8 @@ cat > /etc/httpd/conf.d/${APP_NAME}.conf <<EOF
 </VirtualHost>
 EOF
 
-# Habilitar mod_rewrite y proxy_fcgi
-dnf install -y mod_proxy_fcgi
+# El módulo proxy_fcgi viene incluido en httpd
 systemctl restart httpd
-
-################################################################################
-# 15. CONFIGURAR ARCHIVO .ENV
-################################################################################
-print_step "Configurando archivo .env..."
-if [ ! -f "${APP_DIR}/.env" ]; then
-    cp ${APP_DIR}/.env.example ${APP_DIR}/.env
-    
-    # Actualizar valores en .env
-    sed -i "s|APP_URL=.*|APP_URL=http://${DOMAIN}|g" ${APP_DIR}/.env
-    sed -i "s|DB_DATABASE=.*|DB_DATABASE=${DB_NAME}|g" ${APP_DIR}/.env
-    sed -i "s|DB_USERNAME=.*|DB_USERNAME=${DB_USER}|g" ${APP_DIR}/.env
-    sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|g" ${APP_DIR}/.env
-    
-    print_message "Archivo .env configurado"
-else
-    print_warning "El archivo .env ya existe, no se modificará"
-fi
 
 ################################################################################
 # 16. GENERAR CLAVE DE APLICACIÓN Y EJECUTAR MIGRACIONES
@@ -354,7 +365,15 @@ php artisan route:cache
 php artisan view:cache
 
 ################################################################################
-# 17. CONFIGURAR SUPERVISOR PARA COLAS LARAVEL
+# 17. DESHABILITAR SELINUX
+################################################################################
+print_step "Deshabilitando SELinux..."
+setenforce 0
+sed -i 's/^SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
+print_message "SELinux deshabilitado (requiere reinicio para aplicar cambios permanentes)"
+
+################################################################################
+# 18. CONFIGURAR SUPERVISOR PARA COLAS LARAVEL
 ################################################################################
 print_step "Configurando Supervisor para colas Laravel..."
 
@@ -448,7 +467,7 @@ supervisorctl reread
 supervisorctl update
 
 ################################################################################
-# 18. CONFIGURAR CRON PARA LARAVEL SCHEDULER Y LIMPIEZA
+# 19. CONFIGURAR CRON PARA LARAVEL SCHEDULER Y LIMPIEZA
 ################################################################################
 print_step "Configurando tareas programadas (cron)..."
 
@@ -465,37 +484,7 @@ print_step "Configurando tareas programadas (cron)..."
 print_message "Tareas cron configuradas para usuario root"
 
 ################################################################################
-# 19. CONFIGURAR FIREWALL
-################################################################################
-print_step "Configurando firewall..."
-if systemctl is-active --quiet firewalld; then
-    firewall-cmd --permanent --add-service=http
-    firewall-cmd --permanent --add-service=https
-    firewall-cmd --reload
-    print_message "Firewall configurado para HTTP y HTTPS"
-else
-    print_warning "Firewall no está activo. Se recomienda configurarlo manualmente"
-fi
-
-################################################################################
-# 20. CONFIGURAR SELINUX
-################################################################################
-print_step "Configurando SELinux..."
-if command -v getenforce &> /dev/null; then
-    if [ "$(getenforce)" != "Disabled" ]; then
-        setsebool -P httpd_can_network_connect on
-        setsebool -P httpd_can_network_connect_db on
-        setsebool -P httpd_unified on
-        
-        chcon -R -t httpd_sys_rw_content_t ${APP_DIR}/storage
-        chcon -R -t httpd_sys_rw_content_t ${APP_DIR}/bootstrap/cache
-        
-        print_message "SELinux configurado correctamente"
-    fi
-fi
-
-################################################################################
-# 21. RESUMEN DE INSTALACIÓN
+# 20. RESUMEN DE INSTALACIÓN
 ################################################################################
 print_step "Instalación completada!"
 echo ""
@@ -540,12 +529,15 @@ echo "  CREDENCIALES"
 echo "=========================================="
 echo ""
 echo "Base de datos: ${DB_NAME}"
-echo "Usuario DB: ${DB_USER}"
+echo "Usuario DB: ${DB_USER} (root de MariaDB)"
 echo "Contraseña DB: Ver /root/.wialon_db_credentials"
 echo ""
 echo "Usuario aplicación: root"
 echo "Directorio aplicación: ${APP_DIR}"
 echo "Repositorio GitHub: ${GIT_REPO}"
+echo ""
+echo "IMPORTANTE: SELinux ha sido deshabilitado."
+echo "Se recomienda reiniciar el servidor para aplicar todos los cambios."
 echo ""
 echo "=========================================="
 echo "  COMANDOS ÚTILES"

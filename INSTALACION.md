@@ -21,12 +21,15 @@ Esta guía detalla los pasos para instalar manualmente el sistema Wialon WebServ
 
 ## 🚀 Proceso de Instalación
 
-### 1. Actualizar Sistema
+### 1. Actualizar Sistema e Instalar Herramientas Básicas
 
 ```bash
 sudo dnf update -y
 sudo dnf install -y epel-release
 sudo dnf config-manager --set-enabled crb
+
+# Instalar herramientas básicas
+sudo dnf install -y nano wget curl
 ```
 
 ---
@@ -91,35 +94,32 @@ sudo systemctl start mariadb
 sudo systemctl enable mariadb
 ```
 
-#### 3.3 Configurar Seguridad de MariaDB
+#### 3.3 Crear Base de Datos
+
+```bash
+# Crear base de datos (sin contraseña aún)
+sudo mysql -e "CREATE DATABASE wialon_webservices CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
+
+#### 3.4 Configurar Seguridad de MariaDB
 
 ```bash
 sudo mysql_secure_installation
 ```
 
-Responder:
+**Responder a las preguntas:**
 
--   Enter current password: **(presionar Enter)**
--   Switch to unix_socket authentication: **N**
--   Change the root password: **Y** (establecer contraseña segura)
--   Remove anonymous users: **Y**
--   Disallow root login remotely: **Y**
--   Remove test database: **Y**
--   Reload privilege tables: **Y**
+-   **Enter current password for root:** (Presionar Enter, no hay contraseña aún)
+-   **Switch to unix_socket authentication:** N
+-   **Change the root password:** Y (establecer contraseña segura y **guardarla**)
+-   **Remove anonymous users:** Y
+-   **Disallow root login remotely:** Y
+-   **Remove test database:** Y
+-   **Reload privilege tables:** Y
 
-#### 3.4 Crear Base de Datos y Usuario
+**⚠️ IMPORTANTE:** Guardar la contraseña de root de MariaDB, se necesitará para el archivo `.env`
 
-```bash
-# Conectar a MariaDB
-sudo mysql -u root -p
-
-# Ejecutar dentro de MariaDB:
-CREATE DATABASE wialon_webservices CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'wialon_user'@'localhost' IDENTIFIED BY 'TU_CONTRASEÑA_SEGURA';
-GRANT ALL PRIVILEGES ON wialon_webservices.* TO 'wialon_user'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
-```
+**Nota:** Usaremos el usuario `root` de MariaDB para la aplicación.
 
 ---
 
@@ -147,7 +147,7 @@ sudo systemctl status redis
 ### 5. Instalar Apache (httpd)
 
 ```bash
-sudo dnf install -y httpd mod_ssl mod_proxy_fcgi
+sudo dnf install -y httpd mod_ssl
 
 # Habilitar Apache
 sudo systemctl enable httpd
@@ -157,16 +157,16 @@ sudo systemctl enable httpd
 
 ---
 
-### 6. Instalar Node.js 20 LTS
+### 6. Instalar Node.js 22 LTS
 
 ```bash
 sudo dnf module reset nodejs -y
-sudo dnf module enable nodejs:20 -y
+sudo dnf module enable nodejs:22 -y
 sudo dnf install -y nodejs npm
 
 # Verificar instalación
-node -v  # Debe mostrar v20.x.x
-npm -v   # Debe mostrar 10.x.x
+node -v  # Debe mostrar v22.x.x
+npm -v
 ```
 
 ---
@@ -241,45 +241,7 @@ sudo mkdir -p /var/www/wialon-webservices/bootstrap/cache
 
 ---
 
-### 12. Configurar Permisos
-
-```bash
-# Establecer propietario root con grupo apache
-sudo chown -R root:apache /var/www/wialon-webservices
-
-# Permisos generales
-sudo chmod -R 755 /var/www/wialon-webservices
-
-# Permisos de escritura para storage y cache
-sudo chmod -R 775 /var/www/wialon-webservices/storage
-sudo chmod -R 775 /var/www/wialon-webservices/bootstrap/cache
-
-# Asegurar que apache tenga permisos de grupo
-sudo chgrp -R apache /var/www/wialon-webservices/storage
-sudo chgrp -R apache /var/www/wialon-webservices/bootstrap/cache
-```
-
----
-
-### 13. Instalar Dependencias de la Aplicación
-
-```bash
-# Cambiar al directorio de la aplicación
-cd /var/www/wialon-webservices
-
-# Instalar dependencias de Composer
-sudo composer install --no-dev --optimize-autoloader --no-interaction
-
-# Instalar dependencias de Node.js
-sudo npm install
-
-# Compilar assets
-sudo npm run build
-```
-
----
-
-### 14. Configurar Archivo .env
+### 12. Configurar Archivo .env
 
 ```bash
 # Copiar archivo de ejemplo
@@ -306,7 +268,7 @@ DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=wialon_webservices
-DB_USERNAME=wialon_user
+DB_USERNAME=root
 DB_PASSWORD=TU_CONTRASEÑA_SEGURA
 
 QUEUE_CONNECTION=redis
@@ -326,6 +288,44 @@ CACHE_PREFIX=wialon_cache
 ```
 
 **Guardar y cerrar:** `Ctrl+X`, luego `Y`, luego `Enter`
+
+---
+
+### 13. Instalar Dependencias de la Aplicación
+
+```bash
+# Cambiar al directorio de la aplicación
+cd /var/www/wialon-webservices
+
+# Instalar dependencias de Composer
+sudo composer install --no-dev --optimize-autoloader --no-interaction
+
+# Instalar dependencias de Node.js
+sudo npm install
+
+# Compilar assets
+sudo npm run build
+```
+
+---
+
+### 14. Configurar Permisos
+
+```bash
+# Establecer propietario root con grupo apache
+sudo chown -R root:apache /var/www/wialon-webservices
+
+# Permisos generales
+sudo chmod -R 755 /var/www/wialon-webservices
+
+# Permisos de escritura para storage y cache
+sudo chmod -R 775 /var/www/wialon-webservices/storage
+sudo chmod -R 775 /var/www/wialon-webservices/bootstrap/cache
+
+# Asegurar que apache tenga permisos de grupo
+sudo chgrp -R apache /var/www/wialon-webservices/storage
+sudo chgrp -R apache /var/www/wialon-webservices/bootstrap/cache
+```
 
 ---
 
@@ -594,36 +594,24 @@ sudo php artisan event:cache
 
 ---
 
-### 22. Configurar Firewall
+### 22. Deshabilitar SELinux
 
 ```bash
-# Permitir tráfico HTTP y HTTPS
-sudo firewall-cmd --permanent --add-service=http
-sudo firewall-cmd --permanent --add-service=https
-sudo firewall-cmd --reload
+# Deshabilitar SELinux temporalmente
+sudo setenforce 0
 
-# Verificar reglas
-sudo firewall-cmd --list-all
+# Deshabilitar SELinux permanentemente
+sudo sed -i 's/^SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
+
+# Verificar estado
+getenforce  # Debe mostrar: Permissive
 ```
+
+**Nota:** SELinux quedará completamente deshabilitado después del reinicio del servidor.
 
 ---
 
-### 23. Configurar SELinux
-
-```bash
-# Permitir conexiones de red para Apache
-sudo setsebool -P httpd_can_network_connect on
-sudo setsebool -P httpd_can_network_connect_db on
-sudo setsebool -P httpd_unified on
-
-# Establecer contextos SELinux para directorios de escritura
-sudo chcon -R -t httpd_sys_rw_content_t /var/www/wialon-webservices/storage
-sudo chcon -R -t httpd_sys_rw_content_t /var/www/wialon-webservices/bootstrap/cache
-```
-
----
-
-### 24. Iniciar Servicios
+### 23. Iniciar Servicios
 
 ```bash
 # Iniciar Apache
@@ -880,9 +868,8 @@ sudo tail -f /var/log/mariadb/mariadb.log
 -   [ ] PHP-FPM configurado con usuario root
 -   [ ] Supervisor con 15 workers activos (user=root)
 -   [ ] Cron configurado para scheduler y limpieza (en crontab de root)
--   [ ] Firewall configurado para HTTP/HTTPS
--   [ ] SELinux configurado correctamente
--   [ ] Archivo .env configurado con credenciales correctas
+-   [ ] SELinux deshabilitado
+-   [ ] Archivo .env configurado con credenciales correctas (usuario root de MariaDB)
 -   [ ] Clave de aplicación generada
 -   [ ] Migraciones ejecutadas
 -   [ ] Aplicación optimizada para producción
