@@ -359,6 +359,17 @@ php artisan key:generate --force
 print_step "Ejecutando migraciones de base de datos..."
 php artisan migrate --force
 
+# Preguntar si desea ejecutar seeders
+print_step "Configurando datos iniciales..."
+read -p "¿Desea ejecutar los seeders para poblar la base de datos con datos iniciales? (s/n) [n]: " ejecutar_seeders
+if [[ "$ejecutar_seeders" =~ ^[SsYy]$ ]]; then
+    print_message "Ejecutando seeders..."
+    php artisan db:seed --force
+    print_message "Seeders ejecutados correctamente"
+else
+    print_warning "Seeders omitidos. Puede ejecutarlos manualmente más tarde con: php artisan db:seed --force"
+fi
+
 print_step "Optimizando aplicación para producción..."
 php artisan config:cache
 php artisan route:cache

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\DashBoard;
+namespace App\Livewire\Dashboard;
 
 
 use App\Models\Config;

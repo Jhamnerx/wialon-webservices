@@ -338,12 +338,34 @@ sudo php artisan key:generate --force
 
 ---
 
-### 16. Ejecutar Migraciones
+### 16. Ejecutar Migraciones y Seeders
+
+#### 16.1 Ejecutar Migraciones
 
 ```bash
 cd /var/www/wialon-webservices
 sudo php artisan migrate --force
 ```
+
+#### 16.2 Ejecutar Seeders (Opcional)
+
+Los seeders poblarán la base de datos con datos iniciales necesarios para el funcionamiento del sistema.
+
+````bash
+cd /var/www/wialon-webservices
+
+# Ejecutar todos los seeders
+sudo php artisan db:seed --force
+
+
+**Nota:** Los seeders crearán:
+
+-   Roles y permisos iniciales del sistema
+-   Servicios predefinidos (SISCOP, OSINERGMIN, SUTRAN)
+-   Usuario administrador por defecto (si aplica)
+-   Configuraciones iniciales necesarias
+
+**⚠️ IMPORTANTE:** Si ya tienes datos en producción, **NO** ejecutes los seeders ya que podrían sobrescribir información existente. Solo ejecuta los seeders en instalaciones nuevas.
 
 ---
 
@@ -376,7 +398,7 @@ EOF
 # Habilitar y reiniciar PHP-FPM
 sudo systemctl enable php-fpm
 sudo systemctl restart php-fpm
-```
+````
 
 ---
 
@@ -540,6 +562,7 @@ sudo supervisorctl start all
 
 ```bash
 # Editar crontab de root
+export EDITOR=/bin/nano
 sudo crontab -e
 
 # Agregar las siguientes líneas:
@@ -872,6 +895,7 @@ sudo tail -f /var/log/mariadb/mariadb.log
 -   [ ] Archivo .env configurado con credenciales correctas (usuario root de MariaDB)
 -   [ ] Clave de aplicación generada
 -   [ ] Migraciones ejecutadas
+-   [ ] Seeders ejecutados (si es instalación nueva)
 -   [ ] Aplicación optimizada para producción
 -   [ ] Permisos configurados (root:apache)
 -   [ ] SSL configurado (opcional pero recomendado)
