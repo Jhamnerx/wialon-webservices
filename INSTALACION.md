@@ -317,6 +317,8 @@ sudo chown -R root:apache /var/www/wialon-webservices
 
 # Permisos generales
 sudo chmod -R 755 /var/www/wialon-webservices
+chmod -R 777 vendor/
+chmod 777 storage/* -R
 
 # Permisos de escritura para storage y cache
 sudo chmod -R 775 /var/www/wialon-webservices/storage
@@ -418,25 +420,9 @@ sudo tee /etc/httpd/conf.d/wialon-webservices.conf > /dev/null <<'EOF'
         Options -Indexes +FollowSymLinks
     </Directory>
 
-    <FilesMatch \.php$>
-        SetHandler "proxy:unix:/run/php-fpm/wialon-webservices.sock|fcgi://localhost"
-    </FilesMatch>
-
     ErrorLog /var/www/wialon-webservices/storage/logs/apache-error.log
     CustomLog /var/www/wialon-webservices/storage/logs/apache-access.log combined
 
-    # Compresión
-    <IfModule mod_deflate.c>
-        AddOutputFilterByType DEFLATE text/plain
-        AddOutputFilterByType DEFLATE text/html
-        AddOutputFilterByType DEFLATE text/xml
-        AddOutputFilterByType DEFLATE text/css
-        AddOutputFilterByType DEFLATE application/xml
-        AddOutputFilterByType DEFLATE application/xhtml+xml
-        AddOutputFilterByType DEFLATE application/rss+xml
-        AddOutputFilterByType DEFLATE application/javascript
-        AddOutputFilterByType DEFLATE application/x-javascript
-    </IfModule>
 </VirtualHost>
 EOF
 

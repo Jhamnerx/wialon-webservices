@@ -92,7 +92,7 @@ class General extends Component
             'status' => 'required',
             'custom_host' => 'required',
             'base_uri' => 'required',
-            'host' => 'required',
+            'host' => 'required_if:custom_host,true|url',
         ]);
 
         try {
