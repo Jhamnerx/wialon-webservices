@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a5cfaae64e14fcb8ef9619a1cd7cb57a",
+    "content-hash": "293ff230776023d4ba3c4dffae7945cb",
     "packages": [
         {
             "name": "archtechx/enums",
@@ -2661,6 +2661,62 @@
                 "source": "https://github.com/Jhamnerx/gpswox-api/tree/main"
             },
             "time": "2025-08-25T22:47:20+00:00"
+        },
+        {
+            "name": "jhamnerx/wialon-api-php",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Jhamnerx/wialon-api-php.git",
+                "reference": "d4149cb1228b13dbb3b8e7ab205a4b05df56ede2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Jhamnerx/wialon-api-php/zipball/d4149cb1228b13dbb3b8e7ab205a4b05df56ede2",
+                "reference": "d4149cb1228b13dbb3b8e7ab205a4b05df56ede2",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "php": ">=8.1",
+                "php-http/discovery": "^1.0",
+                "psr/http-client-implementation": "*",
+                "psr/http-factory-implementation": "*",
+                "psr/http-message": "^1.0 || ^2.0",
+                "symfony/options-resolver": "^6.1 || ^7.0"
+            },
+            "require-dev": {
+                "guzzlehttp/psr7": "^2.0",
+                "php-http/message": "^1.0",
+                "php-http/mock-client": "^1.0",
+                "phpunit/phpunit": "^12.4"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Jhamnerx\\WialonApiPhp\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jhamner",
+                    "email": "jhamnerx1x@gmail.com",
+                    "role": "lead"
+                }
+            ],
+            "description": "PHP client for the Wialon API.",
+            "homepage": "https://github.com/jhamnerx/wialon-api-php",
+            "support": {
+                "email": "jhamnerx1x@gmail.com",
+                "issues": "https://github.com/jhamnerx/wialon-api-php/issues",
+                "source": "https://github.com/jhamnerx/wialon-api-php"
+            },
+            "time": "2025-10-23T00:21:15+00:00"
         },
         {
             "name": "laravel-lang/actions",
@@ -11949,61 +12005,6 @@
                 "source": "https://github.com/wireui/wireui/tree/v2.4.3"
             },
             "time": "2025-04-29T22:34:44+00:00"
-        },
-        {
-            "name": "xint0/wialon-php",
-            "version": "dev-main",
-            "dist": {
-                "type": "path",
-                "url": "../wialon-php",
-                "reference": "78ef6889eadec2bae4361d3ca6c04022848d2a42"
-            },
-            "require": {
-                "ext-json": "*",
-                "php": ">=8.1",
-                "php-http/discovery": "^1.0",
-                "psr/http-client-implementation": "*",
-                "psr/http-factory-implementation": "*",
-                "psr/http-message": "^1.0 || ^2.0",
-                "symfony/options-resolver": "^6.1 || ^7.0"
-            },
-            "require-dev": {
-                "guzzlehttp/psr7": "^2.0",
-                "php-http/message": "^1.0",
-                "php-http/mock-client": "^1.0",
-                "phpunit/phpunit": "^12.4"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Xint0\\WialonPhp\\": "src/"
-                }
-            },
-            "autoload-dev": {
-                "psr-4": {
-                    "Tests\\": "tests/"
-                }
-            },
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Rogelio Jacinto",
-                    "email": "rogelio.jacinto@gmail.com",
-                    "role": "lead"
-                }
-            ],
-            "description": "PHP client for the Wialon API.",
-            "homepage": "https://gitlab.com/xint0-open-source/wialon-php",
-            "support": {
-                "email": "rogelio.jacinto+wialon-php@gmail.com",
-                "issues": "https://gitlab.com/xint0-open-source/wialon-php/-/issues",
-                "source": "https://gitlab.com/xint0-open-source/wialon-php/-/tree/main"
-            },
-            "transport-options": {
-                "relative": true
-            }
         }
     ],
     "packages-dev": [
@@ -14450,9 +14451,7 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": {
-        "xint0/wialon-php": 20
-    },
+    "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

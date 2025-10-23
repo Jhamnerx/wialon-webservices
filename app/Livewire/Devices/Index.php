@@ -10,7 +10,7 @@ use App\Models\Device;
 
 use App\Models\Service;
 use Livewire\Component;
-use Xint0\WialonPhp\Wialon;
+use Jhamnerx\WialonApiPhp\Wialon;
 use Livewire\WithPagination;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;

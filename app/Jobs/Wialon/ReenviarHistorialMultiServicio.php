@@ -8,7 +8,7 @@ use Carbon\Carbon;
 use App\Models\Config;
 use App\Models\Device;
 use App\Models\Service;
-use Xint0\WialonPhp\Wialon;
+use Jhamnerx\WialonApiPhp\Wialon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;

@@ -3,7 +3,7 @@
 namespace App\Services\Fetchers;
 
 use App\Models\Device;
-use Xint0\WialonPhp\Wialon;
+use Jhamnerx\WialonApiPhp\Wialon;
 use Illuminate\Support\Facades\Log;
 
 class WialonFetcher
