@@ -72,7 +72,7 @@
                                     label="Custom Host?" positive xl value="true" />
                             </div>
                         </div>
-
+                        {{ json_encode($errors->all()) }}
                         <div class="flex flex-col sm:flex-row justify-between gap-3 mt-6">
                             <x-form.button wire:click.prevent="saveGeneralConfig" spinner="saveGeneralConfig" positive
                                 rounded="md" label="Guardar Configuración" />
